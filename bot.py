@@ -4,8 +4,21 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Con
 
 TOKEN = "YOUR_BOT_TOKEN_HERE"
 
-# user mode storage
+# 🧠 user mode
 user_mode = {}
+
+# 🇲🇲 Myanmar mini dictionary
+mm_dict = {
+    "run": "ပြေးသည် / လည်ပတ်သည်",
+    "eat": "စားသည်",
+    "go": "သွားသည်",
+    "love": "ချစ်သည်",
+    "work": "အလုပ်လုပ်သည်",
+    "study": "လေ့လာသည်",
+    "play": "ကစားသည်",
+    "read": "ဖတ်သည်",
+    "write": "ရေးသည်",
+}
 
 # 📚 Dictionary function
 def get_word_data(word):
@@ -20,9 +33,15 @@ def get_word_data(word):
 
     result = f"📖 Word: {word}\n\n"
 
+    # 🇲🇲 Myanmar meaning
+    if word in mm_dict:
+        result += f"🇲🇲 Myanmar: {mm_dict[word]}\n\n"
+
+    # pronunciation
     if "phonetic" in data:
         result += f"🔊 Pronunciation: {data['phonetic']}\n\n"
 
+    # meanings
     for meaning in meanings:
         part = meaning["partOfSpeech"]
         result += f"🔹 {part}\n"
@@ -38,7 +57,7 @@ def get_word_data(word):
     return result
 
 
-# 🌐 Simple Translate (FREE)
+# 🌐 Translate function (free)
 def translate_text(text):
     url = "https://api.mymemory.translated.net/get"
     res = requests.get(url, params={"q": text, "langpair": "en|my"})
@@ -62,7 +81,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-# handle messages
+# handle message
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     user_id = update.effective_user.id
@@ -78,7 +97,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("🌐 Translate mode activated")
         return
 
-    # check mode
     mode = user_mode.get(user_id, "dictionary")
 
     if mode == "dictionary":
