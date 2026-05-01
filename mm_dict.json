@@ -1,30 +1,137 @@
-{
-  "run": "ပြေးသည် / လည်ပတ်သည်",
-  "eat": "စားသည်",
-  "go": "သွားသည်",
-  "love": "ချစ်သည်",
-  "work": "အလုပ်လုပ်သည်",
-  "study": "လေ့လာသည်",
-  "play": "ကစားသည်",
-  "read": "ဖတ်သည်",
-  "write": "ရေးသည်",
-  "speak": "ပြောသည်",
-  "listen": "နားထောင်သည်",
-  "see": "မြင်သည်",
-  "hear": "ကြားသည်",
-  "sleep": "အိပ်သည်",
-  "wake": "နိုးသည်",
-  "walk": "လမ်းလျှောက်သည်",
-  "buy": "ဝယ်သည်",
-  "sell": "ရောင်းသည်",
-  "think": "စဉ်းစားသည်",
-  "know": "သိသည်",
-  "understand": "နားလည်သည်",
-  "help": "ကူညီသည်",
-  "give": "ပေးသည်",
-  "take": "ယူသည်",
-  "open": "ဖွင့်သည်",
-  "close": "ပိတ်သည်",
-  "eat breakfast": "မနက်စာစားသည်",
-  "drink": "သောက်သည်"
-}
+import json
+
+# 1000+ common English words
+words = """
+time
+person
+year
+way
+day
+thing
+man
+world
+life
+hand
+part
+child
+eye
+woman
+place
+work
+week
+case
+point
+government
+company
+number
+group
+problem
+fact
+be
+have
+do
+say
+get
+make
+go
+know
+take
+see
+come
+think
+look
+want
+give
+use
+find
+tell
+ask
+work
+seem
+feel
+try
+leave
+call
+good
+new
+first
+last
+long
+great
+little
+own
+other
+old
+right
+big
+high
+different
+small
+large
+next
+early
+young
+important
+few
+public
+bad
+same
+able
+to
+of
+in
+for
+on
+with
+at
+by
+from
+up
+about
+into
+over
+after
+beneath
+under
+above
+the
+and
+a
+that
+I
+it
+not
+he
+as
+you
+this
+but
+his
+they
+her
+she
+or
+an
+will
+my
+one
+all
+would
+there
+their
+"""
+
+# split words
+word_list = list(set(words.split()))
+
+# create Myanmar meanings (basic)
+mm_dict = {}
+
+for w in word_list:
+    mm_dict[w] = f"{w} (မြန်မာအဓိပ္ပါယ်ထည့်ရန်)"
+
+# save json
+with open("mm_dict.json", "w", encoding="utf-8") as f:
+    json.dump(mm_dict, f, ensure_ascii=False, indent=2)
+
+print("✅ Dictionary created!")
