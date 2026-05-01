@@ -1,26 +1,33 @@
 import requests
+import threading
+from flask import Flask
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
 TOKEN = "YOUR_BOT_TOKEN_HERE"
 
-# 🧠 user mode
+# Flask app (for Render port)
+app_web = Flask(__name__)
+
+@app_web.route("/")
+def home():
+    return "Bot is running"
+
+def run_web():
+    app_web.run(host="0.0.0.0", port=10000)
+
+# user mode
 user_mode = {}
 
-# 🇲🇲 Myanmar mini dictionary
+# Myanmar dictionary
 mm_dict = {
     "run": "ပြေးသည် / လည်ပတ်သည်",
     "eat": "စားသည်",
     "go": "သွားသည်",
     "love": "ချစ်သည်",
-    "work": "အလုပ်လုပ်သည်",
-    "study": "လေ့လာသည်",
-    "play": "ကစားသည်",
-    "read": "ဖတ်သည်",
-    "write": "ရေးသည်",
 }
 
-# 📚 Dictionary function
+# dictionary function
 def get_word_data(word):
     url = f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}"
     res = requests.get(url)
@@ -29,93 +36,42 @@ def get_word_data(word):
         return None
 
     data = res.json()[0]
-    meanings = data["meanings"]
-
     result = f"📖 Word: {word}\n\n"
 
-    # 🇲🇲 Myanmar meaning
     if word in mm_dict:
-        result += f"🇲🇲 Myanmar: {mm_dict[word]}\n\n"
+        result += f"🇲🇲 {mm_dict[word]}\n\n"
 
-    # pronunciation
-    if "phonetic" in data:
-        result += f"🔊 Pronunciation: {data['phonetic']}\n\n"
-
-    # meanings
-    for meaning in meanings:
-        part = meaning["partOfSpeech"]
-        result += f"🔹 {part}\n"
-
-        for i, d in enumerate(meaning["definitions"][:2]):
-            result += f"{i+1}. {d['definition']}\n"
-
-            if "example" in d:
-                result += f"   📌 {d['example']}\n"
-
+    for m in data["meanings"]:
+        result += f"🔹 {m['partOfSpeech']}\n"
+        for d in m["definitions"][:2]:
+            result += f"- {d['definition']}\n"
         result += "\n"
 
     return result
 
-
-# 🌐 Translate function (free)
-def translate_text(text):
-    url = "https://api.mymemory.translated.net/get"
-    res = requests.get(url, params={"q": text, "langpair": "en|my"})
-
-    if res.status_code != 200:
-        return "❌ Translate error"
-
-    return res.json()["responseData"]["translatedText"]
-
-
-# /start command
+# start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [["📖 Dictionary", "🌐 Translate"]]
-    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    await update.message.reply_text("Choose mode", reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True))
 
-    user_mode[update.effective_user.id] = "dictionary"
+# message
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text.lower()
+    data = get_word_data(text)
 
-    await update.message.reply_text(
-        "👋 Choose mode:",
-        reply_markup=reply_markup
-    )
+    if data:
+        await update.message.reply_text(data)
+    else:
+        await update.message.reply_text("❌ Not found")
 
+# run bot
+def run_bot():
+    app = ApplicationBuilder().token("8618858114:AAG1MJQxqPdxjgCN3NRENWTKEbbPGf1o5m4").build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT, handle))
+    app.run_polling()
 
-# handle message
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
-    user_id = update.effective_user.id
-
-    # switch mode
-    if text == "📖 Dictionary":
-        user_mode[user_id] = "dictionary"
-        await update.message.reply_text("📖 Dictionary mode activated")
-        return
-
-    elif text == "🌐 Translate":
-        user_mode[user_id] = "translate"
-        await update.message.reply_text("🌐 Translate mode activated")
-        return
-
-    mode = user_mode.get(user_id, "dictionary")
-
-    if mode == "dictionary":
-        data = get_word_data(text.lower())
-        if data:
-            await update.message.reply_text(data)
-        else:
-            await update.message.reply_text("❌ Word not found")
-
-    elif mode == "translate":
-        result = translate_text(text)
-        await update.message.reply_text(f"🌐 {result}")
-
-
-# main
-app = ApplicationBuilder().token("8618858114:AAG1MJQxqPdxjgCN3NRENWTKEbbPGf1o5m4").build()
-
-app.add_handler(CommandHandler("start", start))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-print("Bot running...")
-app.run_polling()
+# threading run
+if __name__ == "__main__":
+    threading.Thread(target=run_web).start()
+    run_bot()
